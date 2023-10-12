@@ -1,8 +1,3 @@
-#[macro_use]
-extern crate bitflags;
-#[macro_use]
-extern crate derive_error;
-
 mod utils;
 
 use std::collections::VecDeque;
@@ -12,6 +7,7 @@ use std::path::Path;
 use std::str;
 use std::str::from_utf8;
 use bitflags::Flags;
+use derive_error::Error;
 
 use lopdf::content::{Content, Operation};
 use lopdf::{Document, Object, ObjectId, StringFormat};
@@ -29,7 +25,7 @@ pub struct Form {
 }
 
 /// The possible types of fillable form fields in a PDF
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum FieldType {
     Button,
     Radio,

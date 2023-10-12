@@ -1,3 +1,4 @@
+use bitflags::{bitflags, Flags};
 use lopdf::{Dictionary, Object};
 
 use crate::from_utf8;
