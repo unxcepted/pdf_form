@@ -11,6 +11,7 @@ use derive_error::Error;
 
 use lopdf::content::{Content, Operation};
 use lopdf::{Document, Object, ObjectId, StringFormat};
+use lopdf::Object::Null;
 
 use crate::utils::*;
 
@@ -450,20 +451,35 @@ impl Form {
     ///
     /// A more sophisticated parser is needed here
     fn regenerate_text_appearance(&mut self, n: usize) -> Result<(), lopdf::Error> {
-        let field = {
-            self.doc
-                .objects
-                .get(&self.form_ids[n])
-                .unwrap()
-                .as_dict()
-                .unwrap()
-        };
+        let field = self
+            .doc
+            .objects
+            .get_mut(&self.form_ids[n])
+            .unwrap()
+            .as_dict_mut()
+            .unwrap();
 
         // The value of the object (should be a string)
         let value = field.get(b"V")?.to_owned();
 
         // The default appearance of the object (should be a string)
         let da = field.get(b"DA")?.to_owned();
+
+        let font = parse_font(match da {
+            Object::String(ref bytes, _) => Some(from_utf8(bytes)?),
+            _ => None,
+        });
+
+        // Define some helping font variables
+        let font_name = (font.0).0;
+        let font_size = (font.0).1;
+        let font_color = font.1;
+
+        // experimental: let browser handle auto font size (wipe appearance from pdf)
+        if font_size == 0 {
+            field.set("AP", Null);
+            return Ok(())
+        }
 
         // The default appearance of the object (should be a string)
         let rect = field
@@ -506,16 +522,6 @@ impl Form {
             Operation::new("q", vec![]),
             Operation::new("BT", vec![]),
         ]);
-
-        let font = parse_font(match da {
-            Object::String(ref bytes, _) => Some(from_utf8(bytes)?),
-            _ => None,
-        });
-
-        // Define some helping font variables
-        let font_name = (font.0).0;
-        let font_size = (font.0).1;
-        let font_color = font.1;
 
         // Set the font type and size and color
         content.operations.append(&mut vec![
